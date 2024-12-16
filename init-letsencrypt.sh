@@ -1,16 +1,37 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+full_path="$(realpath ${BASH_SOURCE[0]})"
+script="$(basename "$full_path")"
+scriptd="$(dirname "$full_path")"
+
+USAGE="
+Usage: $script <email> <domain>
+
+Positional parameters:
+    email: email to register with certbot
+    domain: the domain names to register a certificate for
+"
+
+if (($# < 2)); then
+    echo "$USAGE"
+    exit 1
+fi
 
 if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Error: docker-compose is not installed.' >&2
   exit 1
 fi
 
-domains=(example.org www.example.org)
+sed -e "s/example.org/$2/g" "$scriptd/data/nginx/app.conf" > "$scriptd/data/nginx/tmp"
+mv "$scriptd/data/nginx/tmp" "$scriptd/data/nginx/app.conf"
+
+domains=("$2" "www.${2}")
 rsa_key_size=4096
 data_path="./data/certbot"
-email="" # Adding a valid address is strongly recommended
+email="$1" # Adding a valid address is strongly recommended
 staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
+exit 0
 if [ -d "$data_path" ]; then
   read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
   if [ "$decision" != "Y" ] && [ "$decision" != "y" ]; then
